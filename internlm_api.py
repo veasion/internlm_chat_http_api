@@ -15,6 +15,7 @@ CORS(app, origins='*')
 logging.getLogger().setLevel(logging.INFO)
 
 # model: internlm-chat-7b, internlm-chat-7b-8k, internlm-chat-7b-v1_1
+# model_path = "/root/autodl-tmp/internlm-chat-7b-8k"
 model_path = "internlm-chat-7b-8k"
 
 # load model
@@ -139,13 +140,8 @@ def generate_interactive(
             break
 
 
-def load_model():
-    model = AutoModelForCausalLM.from_pretrained(model_path, trust_remote_code=True).to(torch.bfloat16).cuda()
-    tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
-    return model, tokenizer
-
-
-system_prompt = "<|System|>:{system}<TOKENS_UNUSED_2>\n"
+# system_prompt = "<|System|>:{system}<TOKENS_UNUSED_2>\n"
+system_prompt = "<|System|>:{system}<eos>\n"
 user_prompt = "<|User|>:{user}<eoh>\n"
 robot_prompt = "<|Bot|>:{assistant}<eoa>\n"
 # cur_query_prompt = "<|User|>:{user}<eoh>\n<|Bot|>:"
@@ -196,7 +192,7 @@ def chat():
         generation_config = copy.deepcopy(model.generation_config)
         generation_config.top_p = data['top_p'] if 'top_p' in data else 0.8 # 0-1
         generation_config.do_sample = data['do_sample'] if 'do_sample' in data else True
-        generation_config.temperature = data['temperature'] if 'temperature' in data else 0.7  # 0-1
+        generation_config.temperature = data['temperature'] if 'temperature' in data else 0.8  # 0-1
         generation_config.max_new_tokens = data['max_tokens'] if 'max_tokens' in data else 2048 # 20-8196
         generation_config.repetition_penalty = data['repetition_penalty'] if 'repetition_penalty' in data else 1.0
 
