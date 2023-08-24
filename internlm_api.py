@@ -14,15 +14,15 @@ app = Flask(__name__)
 CORS(app, origins='*')
 logging.getLogger().setLevel(logging.INFO)
 
-# model: internlm-chat-7b, internlm-chat-7b-8k
-model_name = "internlm-chat-7b-8k"
+# model: internlm-chat-7b, internlm-chat-7b-8k, internlm-chat-7b-v1_1
+model_path = "internlm-chat-7b-8k"
 
 # load model
 torch.cuda.empty_cache()
-print(f'load model {model_name} begin.')
-model = AutoModelForCausalLM.from_pretrained(model_name, trust_remote_code=True).to(torch.bfloat16).cuda()
-tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
-print(f'load model {model_name} end.')
+print(f'load model {model_path} begin.')
+model = AutoModelForCausalLM.from_pretrained(model_path, trust_remote_code=True).to(torch.bfloat16).cuda()
+tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
+print(f'load model {model_path} end.')
 
 
 @torch.inference_mode()
@@ -140,11 +140,12 @@ def generate_interactive(
 
 
 def load_model():
-    model = AutoModelForCausalLM.from_pretrained(model_name, trust_remote_code=True).to(torch.bfloat16).cuda()
-    tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
+    model = AutoModelForCausalLM.from_pretrained(model_path, trust_remote_code=True).to(torch.bfloat16).cuda()
+    tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
     return model, tokenizer
 
 
+system_prompt = "<|System|>:{system}<TOKENS_UNUSED_2>\n"
 user_prompt = "<|User|>:{user}<eoh>\n"
 robot_prompt = "<|Bot|>:{assistant}<eoa>\n"
 # cur_query_prompt = "<|User|>:{user}<eoh>\n<|Bot|>:"
@@ -154,7 +155,9 @@ def combine_prompt(messages):
     total_prompt = ""
     for message in messages:
         cur_content = message["content"]
-        if message["role"] == "user":
+        if message["role"] == "system":
+            cur_prompt = system_prompt.replace("{system}", cur_content)
+        elif message["role"] == "user":
             cur_prompt = user_prompt.replace("{user}", cur_content)
         elif message["role"] == "assistant":
             cur_prompt = robot_prompt.replace("{assistant}", cur_content)
